@@ -22,10 +22,10 @@ from transformers.activations import get_activation
 from torch import nn
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from sklearn.preprocessing import LabelEncoder
-from transformers import (DataCollatorWithPadding,
+from transformers import (TrainerCallback,
                           Trainer, TrainingArguments, ElectraModel, ElectraPreTrainedModel, ElectraTokenizer)
 from transformers.modeling_outputs import SequenceClassifierOutput
-os.environ["WANDB_MODE"] = "dryrun"
+# os.environ["WANDB_MODE"] = "dryrun"
 
 
 checkpoint_for_adapter = 'howey/electra-base-mnli'
@@ -35,6 +35,13 @@ bad_classes = [
     "fallacy of slippery slope",
     "slothful induction"
 ]
+
+
+class PrinterCallback(TrainerCallback):
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        _ = logs.pop("total_flos", None)
+        with open('logs.txt', 'w') as f:
+            f.write(f"{str(logs)}\n")
 
 
 class ElectraClassificationHead(nn.Module):
@@ -172,14 +179,14 @@ class ElectraForSequenceClassification(ElectraPreTrainedModel):
 
 
 def create_augmented_case(row, config, similar_cases: List[str]):
-    if config.feature in ['text', 'explanations']:
+    if config.feature in ['text', 'explanations', 'goals']:
         augmented_case = row['text']
         for similar_case in similar_cases:
             augmented_case += f' {config.sep_token} ' + similar_case
-    elif config.feature == 'structure':
+    elif config.feature in ['structure', 'counterfactual']:
         augmented_case = row['text']
         for similar_case in similar_cases:
-            augmented_case += f" {config.sep_token} {row['structure']} {config.sep_token} {similar_case}"
+            augmented_case += f" {config.sep_token} {row[config.feature]} {config.sep_token} {similar_case}"
     return augmented_case
 
 
@@ -243,7 +250,7 @@ class CustomTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
-def save_results(config, label_encoder, predictions, test_df):
+def save_results(config, label_encoder, predictions, predictions_climate, test_df):
     now = datetime.today().isoformat()
 
     # run_name = wandb.run.name
@@ -253,8 +260,7 @@ def save_results(config, label_encoder, predictions, test_df):
     outputs_dict["meta"] = dict(config)
     # outputs_dict['run_name'] = run_name
     outputs_dict['predictions'] = predictions._asdict()
-    # if config.data_dir != 'data/bigbench':
-    # outputs_dict['predictions_climate'] = predictions_climate._asdict()
+    outputs_dict['predictions_climate'] = predictions_climate._asdict()
     outputs_dict['text'] = test_df['text'].tolist()
     outputs_dict['augmented_cases'] = test_df['augmented_cases'].tolist()
     outputs_dict['similar_cases'] = test_df['similar_cases'].tolist()
@@ -278,15 +284,13 @@ def do_train_process(config=None):
         train_df = pd.read_csv(os.path.join(config.data_dir, "train.csv"))
         dev_df = pd.read_csv(os.path.join(config.data_dir, "dev.csv"))
         test_df = pd.read_csv(os.path.join(config.data_dir, "test.csv"))
-        # if config.data_dir != 'data/bigbench':
-        #     climate_df = pd.read_csv(os.path.join(
-        #         config.data_dir, "climate_test.csv"))
+        climate_df = pd.read_csv(os.path.join(
+            config.data_dir, "climate_test.csv"))
 
         train_df = train_df[~train_df["label"].isin(bad_classes)]
         dev_df = dev_df[~dev_df["label"].isin(bad_classes)]
         test_df = test_df[~test_df["label"].isin(bad_classes)]
-        # if config.data_dir != 'data/bigbench':
-        #     climate_df = climate_df[~climate_df["label"].isin(bad_classes)]
+        climate_df = climate_df[~climate_df["label"].isin(bad_classes)]
 
         # print('using cbr')
 
@@ -303,9 +307,7 @@ def do_train_process(config=None):
                     config)
                 retrievers_to_use.append(sentence_transformers_retriever)
 
-        dfs_to_process = [train_df, dev_df, test_df]
-        # if config.data_dir == 'data/bigbench' else [
-        #     train_df, dev_df, test_df, climate_df]
+        dfs_to_process = [train_df, dev_df, test_df, climate_df]
         for df in dfs_to_process:
             df = augment_with_similar_cases(
                 df, retrievers_to_use, config
@@ -325,9 +327,7 @@ def do_train_process(config=None):
             train_df['label'])
         dev_df['label'] = label_encoder.transform(dev_df['label'])
         test_df['label'] = label_encoder.transform(test_df['label'])
-        # if config.data_dir != 'data/bigbench':
-        #     climate_df['label'] = label_encoder.transform(
-        #         climate_df['label'])
+        climate_df['label'] = label_encoder.transform(climate_df['label'])
 
         if config.data_dir == 'data/bigbench':
             dataset = DatasetDict({
@@ -340,7 +340,7 @@ def do_train_process(config=None):
                 'train': Dataset.from_pandas(train_df),
                 'eval': Dataset.from_pandas(dev_df),
                 'test': Dataset.from_pandas(test_df),
-                # 'climate': Dataset.from_pandas(climate_df)
+                'climate': Dataset.from_pandas(climate_df)
             })
 
         def process(batch):
@@ -377,7 +377,8 @@ def do_train_process(config=None):
             weight_decay=config.weight_decay,
             logging_steps=200,
             evaluation_strategy='steps',
-            # report_to="wandb"
+            report_to="wandb",
+            auto_find_batch_size=True,
         )
 
         def compute_metrics(pred):
@@ -399,16 +400,18 @@ def do_train_process(config=None):
             train_dataset=tokenized_dataset['train'],
             eval_dataset=tokenized_dataset['eval'],
             tokenizer=tokenizer,
-            compute_metrics=compute_metrics
+            compute_metrics=compute_metrics,
+            # callbacks=[PrinterCallback]
         )
 
         # print('Start the training ...')
         trainer.train()
 
         predictions = trainer.predict(tokenized_dataset['test'])
-        # if config.data_dir != 'data/bigbench':
-        # predictions_climate = trainer.predict(tokenized_dataset['climate'])
-        save_results(config, label_encoder, predictions, test_df)
+        predictions_climate = trainer.predict(tokenized_dataset['climate'])
+
+        save_results(config, label_encoder, predictions,
+                     predictions_climate, test_df)
 
 
 class AttributeDict(dict):
@@ -438,7 +441,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     sweep_config = {
-        'method': 'random',
+        'method': 'grid',
     }
 
     metric = {
@@ -449,6 +452,9 @@ if __name__ == "__main__":
     sweep_config['metric'] = metric
 
     parameters_dict = {
+        'checkpoint_for_adapter': {
+            'values': [checkpoint_for_adapter]
+        },
         'sep_token': {
             'values': ['[SEP]']
         },
@@ -486,7 +492,7 @@ if __name__ == "__main__":
             "values": [args.predictions_dir]
         },
         'batch_size': {
-            "values": [8]
+            "values": [16]
         },
         'learning_rate': {
             'values': [8.447927580802138e-05]

@@ -22,13 +22,15 @@ nvidia-smi
 dataset="data/finegrained_with_structures_explanations"
 dataset_mod=${dataset//"/"/_}
 
-for split in "train" "dev" "test"
+for split in "train" "dev" "test" "climate_test"
 do
 
-for feature in "text" "explanations" "structure"
+for feature in "text" "explanations" "structure" "goals" "counterfactual"
 do
 
-CUDA_VISIBLE_DEVICES=0 python -m cbr_analyser.case_retriever.transformers.simcse_similarity_calculations \
+echo "Calculating similarities for ${feature} in ${split} split"
+
+CUDA_VISIBLE_DEVICES=2 python -m cbr_analyser.case_retriever.transformers.simcse_similarity_calculations \
     --feature ${feature} \
     --source_file "${dataset}/train.csv" \
     --target_file "${dataset}/${split}.csv" \

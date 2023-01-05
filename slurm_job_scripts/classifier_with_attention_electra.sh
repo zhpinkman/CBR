@@ -28,20 +28,15 @@ echo "Dataset: $dataset"
 # for checkpoint in 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2' 'sentence-transformers/paraphrase-MiniLM-L6-v2' 'sentence-transformers/all-MiniLM-L12-v2' 'sentence-transformers/all-MiniLM-L6-v2' 'simcse' 'empathy'
 # do
 
-
-# python -m cbr_analyser.reasoner.classifier_with_attention_electra \
-#     --data_dir ${dataset} \
-#     --checkpoint ${checkpoint}
-
 # done
 
 # for num_cases in 11 12 13 14 15 16 17 18 19 20
 # do
 # "explanations" "structure" "text"
-for feature in "structure"
+for feature in "goals"
 do
 
-CUDA_VISIBLE_DEVICES=7 python -m cbr_analyser.reasoner.classifier_with_attention_electra \
+CUDA_VISIBLE_DEVICES=3 python -m cbr_analyser.reasoner.classifier_with_attention_electra \
     --data_dir ${dataset} \
     --feature ${feature}
 # --num_cases ${num_cases}

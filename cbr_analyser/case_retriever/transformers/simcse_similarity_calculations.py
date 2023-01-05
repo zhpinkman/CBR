@@ -13,9 +13,9 @@ def get_embeddings_simcse(model, text: str):
 
 
 def generate_the_simcse_similarities(source_file: str, target_file: str, output_file: str, feature: str):
-    if os.path.exists(output_file):
-        print(f"Output file already exists for {target_file}. Skipping...")
-        return
+    # if os.path.exists(output_file):
+    #     print(f"Output file already exists for {target_file}. Skipping...")
+    #     return
     model = SimCSE("princeton-nlp/sup-simcse-roberta-large")
 
     train_sentences = pd.read_csv(source_file)[feature].tolist()
