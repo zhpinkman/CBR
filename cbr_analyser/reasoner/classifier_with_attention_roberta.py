@@ -438,6 +438,8 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--feature', help="Feature to use for retrieval", type=str, default="text")
+    
+    parser.add_argument('--mode', help="Mode", type=str, default="cbr")
 
     args = parser.parse_args()
 
