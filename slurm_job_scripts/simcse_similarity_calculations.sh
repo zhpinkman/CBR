@@ -25,17 +25,22 @@ dataset_mod=${dataset//"/"/_}
 for split in "train" "dev" "test" "climate_test"
 do
 
-for feature in "text" "explanations" "structure" "goals" "counterfactual"
+for feature in "text" "explanations" "structure" "goals" "counter"
+do
+
+for ratio_of_source_used in 0.1 0.4 0.7 1.0
 do
 
 echo "Calculating similarities for ${feature} in ${split} split"
 
-CUDA_VISIBLE_DEVICES=2 python -m cbr_analyser.case_retriever.transformers.simcse_similarity_calculations \
+CUDA_VISIBLE_DEVICES=7 python -m cbr_analyser.case_retriever.transformers.simcse_similarity_calculations \
     --feature ${feature} \
     --source_file "${dataset}/train.csv" \
     --target_file "${dataset}/${split}.csv" \
-    --output_file "cache/${dataset_mod}/simcse_similarities_${feature}_${split}.joblib" \
+    --output_file "cache/${dataset_mod}/simcse_similarities_${feature}_${split}_ratio_${ratio_of_source_used}.joblib" \
+    --ratio_of_source_used ${ratio_of_source_used}
 
+done
 done
 done
 

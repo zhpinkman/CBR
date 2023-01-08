@@ -183,7 +183,7 @@ def create_augmented_case(row, config, similar_cases: List[str]):
         augmented_case = row['text']
         for similar_case in similar_cases:
             augmented_case += f' {config.sep_token} ' + similar_case
-    elif config.feature in ['structure', 'counterfactual']:
+    elif config.feature in ['structure', 'counter']:
         augmented_case = row['text']
         for similar_case in similar_cases:
             augmented_case += f" {config.sep_token} {row[config.feature]} {config.sep_token} {similar_case}"
@@ -203,7 +203,9 @@ def augment_with_similar_cases(df: pd.DataFrame, retrievers: List[Retriever], co
             try:
 
                 similar_cases_with_labels = retriever.retrieve_similar_cases(
-                    case=row[config.feature], num_cases=config.num_cases, threshold=config.cbr_threshold
+                    case=row[config.feature],
+                    num_cases=config.num_cases,
+                    threshold=config.cbr_threshold,
                 )
 
                 row_similar_cases.extend(
@@ -217,6 +219,7 @@ def augment_with_similar_cases(df: pd.DataFrame, retrievers: List[Retriever], co
 
             except Exception as e:
                 print(e)
+                embed()
 
         augmented_case = create_augmented_case(row, config, row_similar_cases)
 
@@ -292,7 +295,7 @@ def do_train_process(config=None):
         test_df = test_df[~test_df["label"].isin(bad_classes)]
         climate_df = climate_df[~climate_df["label"].isin(bad_classes)]
 
-        # print('using cbr')
+        print('using cbr')
 
         retrievers_to_use = []
         for retriever_str in config.retrievers:
@@ -364,7 +367,7 @@ def do_train_process(config=None):
         model = ElectraForSequenceClassification.from_pretrained(
             checkpoint_for_adapter, num_labels=len(list(label_encoder.classes_)), classifier_dropout=config.classifier_dropout, ignore_mismatched_sizes=True)
 
-        # print('Model loaded!')
+        print('Model loaded!')
 
         training_args = TrainingArguments(
             do_eval=True,
@@ -437,8 +440,11 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--feature', help="Feature to use for retrieval", type=str, default="text")
-    
+
     parser.add_argument('--mode', help="Mode", type=str, default="cbr")
+
+    parser.add_argument('--ratio_of_source_used',
+                        help="Ratio of training data used for the case database", type=float, default=1.0)
 
     args = parser.parse_args()
 
@@ -454,6 +460,9 @@ if __name__ == "__main__":
     sweep_config['metric'] = metric
 
     parameters_dict = {
+        'ratio_of_source_used': {
+            'values': [args.ratio_of_source_used]
+        },
         'checkpoint_for_adapter': {
             'values': [checkpoint_for_adapter]
         },
@@ -483,7 +492,7 @@ if __name__ == "__main__":
             "values": [args.num_cases]
         },
         'cbr_threshold': {
-            "values": [-1e7, 0.5, 0.8]
+            "values": [-1e7, 0.5]
             # "values": [0.5]
             # "values": [-10000000] if args.data_dir == "data/new_finegrained" else [-10000000] if args.data_dir == "data/finegrained" else [-10000000] if args.data_dir == "data/coarsegrained" else [0.5]
         },
@@ -525,4 +534,4 @@ if __name__ == "__main__":
     sweep_config['parameters'] = parameters_dict
     sweep_id = wandb.sweep(
         sweep_config, project="CBR framework with different entities considered for similarity retrieval")
-    wandb.agent(sweep_id, do_train_process, count=6)
+    wandb.agent(sweep_id, do_train_process, count=4)

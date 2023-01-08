@@ -184,7 +184,7 @@ def create_augmented_case(row, config, similar_cases: List[str]):
         augmented_case = row['text']
         for similar_case in similar_cases:
             augmented_case += f' {config.sep_token} ' + similar_case
-    elif config.feature in ['structure', 'counterfactual']:
+    elif config.feature in ['structure', 'counter']:
         augmented_case = row['text']
         for similar_case in similar_cases:
             augmented_case += f" {config.sep_token} {row[config.feature]} {config.sep_token} {similar_case}"
@@ -218,6 +218,7 @@ def augment_with_similar_cases(df: pd.DataFrame, retrievers: List[Retriever], co
 
             except Exception as e:
                 print(e)
+                embed()
 
         augmented_case = create_augmented_case(row, config, row_similar_cases)
 
@@ -438,8 +439,11 @@ if __name__ == "__main__":
 
     parser.add_argument(
         '--feature', help="Feature to use for retrieval", type=str, default="text")
-    
+
     parser.add_argument('--mode', help="Mode", type=str, default="cbr")
+    
+    parser.add_argument('--ratio_of_source_used',
+                        help="Ratio of training data used for the case database", type=float, default=1.0)
 
     args = parser.parse_args()
 
@@ -455,6 +459,9 @@ if __name__ == "__main__":
     sweep_config['metric'] = metric
 
     parameters_dict = {
+        'ratio_of_source_used': {
+            'values': [args.ratio_of_source_used]
+        },
         'checkpoint_for_adapter': {
             'values': [checkpoint_for_adapter]
         },

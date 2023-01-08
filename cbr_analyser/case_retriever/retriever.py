@@ -27,10 +27,14 @@ class SimCSE_Retriever(Retriever):
         base_path = os.path.join("cache", config.data_dir.replace("/", "_"))
         simcse_model_paths = [file for file in os.listdir(
             base_path) if file.startswith(f"simcse_similarities_{config.feature}")]
+        simcse_model_paths = [file for file in simcse_model_paths if file.endswith(
+            f"ratio_{config.ratio_of_source_used}.joblib")]
         for path in simcse_model_paths:
             self.similarities_dict.update(
                 joblib.load(os.path.join(base_path, path))
             )
+        print("Loaded SimCSE similarities")
+        print("Number of files loaded:", len(simcse_model_paths))
 
     def retrieve_similar_cases(self, case: str, num_cases: int = 1, threshold: float = -np.inf):
         sentences_and_similarities = self.similarities_dict[case.strip()].items(
