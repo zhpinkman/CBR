@@ -2,10 +2,10 @@ dataset="data/finegrained_with_structures_explanations"
 echo "Dataset: $dataset"
 
 
-for num_cases in 1
+for num_cases in 2 3
 do
-# "goals" "structure" "text" 
-for feature in "counter" "explanations" 
+
+for feature in "counter" "explanations" "goals" "structure" "text" 
 do
 
 for ratio_of_source_used in 0.4 0.7 0.1 1.0
