@@ -31,7 +31,7 @@ kgtk_conceptnet.tsv
 processed/
 cache/*
 tmp/
-analysis_on_overlap.ipynb
+**/*.ipynb
 
 
 
@@ -50,3 +50,4 @@ cbr_distilbert_logical_fallacy_classification_data_finegrained_with_structures_e
 cbr_bert_logical_fallacy_classification_data_finegrained_with_structures_explanations
 cbr_roberta_logical_fallacy_classification_data_finegrained_with_structures_explanations
 cbr_deberta_logical_fallacy_classification_data_finegrained_with_structures_explanations
+cbr_bart_logical_fallacy_classification_data_finegrained_with_structures_explanations

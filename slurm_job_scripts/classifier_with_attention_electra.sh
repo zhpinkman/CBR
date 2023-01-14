@@ -2,13 +2,13 @@ dataset="data/finegrained_with_structures_explanations"
 echo "Dataset: $dataset"
 
 
-for num_cases in 2 3
+for num_cases in 3
 do
 
-for feature in "counter" "explanations" "goals" "structure" "text" 
+for feature in "goals" "text" "explanations" "structure"
 do
 
-for ratio_of_source_used in 0.4 0.7 0.1 1.0
+for ratio_of_source_used in 0.7 0.1 0.4
 do
 
 WANDB_MODE="dryrun" CUDA_VISIBLE_DEVICES=6 python -m cbr_analyser.reasoner.classifier_with_attention_electra \

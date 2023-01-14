@@ -1,33 +1,15 @@
-#!/bin/bash
-#SBATCH --job-name=logical_fallacy_classifier
-#SBATCH --output=logs/%x-%j.out
-#SBATCH --error=logs/%x-%j.err
-#SBATCH --time=3-00:00:00
-#SBATCH --cpus-per-task=8
-#SBATCH --mem=10240
-#SBATCH --partition=nodes
-#SBATCH --gres=gpu:a100:1
-#SBATCH --chdir=/cluster/raid/home/zhivar.sourati/logical-fallacy-identification/CBR
-# Verify working directory
-echo $(pwd)
-# Print gpu configuration for this job
-nvidia-smi
-# Verify gpu allocation (should be 1 GPU)
-echo $CUDA_VISIBLE_DEVICES
-# Initialize the shell to use local conda
-eval "$(conda shell.bash hook)"
-# Activate (local) env
-conda activate general
-
-
-for dataset in "data/bigbench" "data/coarsegrained" "data/new_finegrained"
-do
-
+dataset="data/finegrained_with_structures_explanations"
 echo "Dataset: $dataset"
-python -m cbr_analyser.reasoner.baseline_classifier \
+
+
+# WANDB_MODE=dryrun CUDA_VISIBLE_DEVICES=7 python -m cbr_analyser.reasoner.classifier_with_attention_roberta_baseline \
+#     --data_dir ${dataset}
+
+
+# WANDB_MODE=dryrun CUDA_VISIBLE_DEVICES=7 python -m cbr_analyser.reasoner.classifier_with_attention_bert_baseline \
+#     --data_dir ${dataset}
+
+
+
+WANDB_MODE=dryrun CUDA_VISIBLE_DEVICES=4 python -m cbr_analyser.reasoner.classifier_with_attention_bart_baseline \
     --data_dir ${dataset}
-
-
-done
-
-conda deactivate
