@@ -253,7 +253,7 @@ class CustomTrainer(Trainer):
         return (loss, outputs) if return_outputs else loss
 
 
-def save_results(config, label_encoder, predictions, predictions_climate, test_df):
+def save_results(config, label_encoder, predictions, predictions_climate, test_df, climate_df):
     now = datetime.today().isoformat()
 
     # run_name = wandb.run.name
@@ -264,10 +264,17 @@ def save_results(config, label_encoder, predictions, predictions_climate, test_d
     # outputs_dict['run_name'] = run_name
     outputs_dict['predictions'] = predictions._asdict()
     outputs_dict['predictions_climate'] = predictions_climate._asdict()
+    
     outputs_dict['text'] = test_df['text'].tolist()
     outputs_dict['augmented_cases'] = test_df['augmented_cases'].tolist()
     outputs_dict['similar_cases'] = test_df['similar_cases'].tolist()
     outputs_dict['similar_cases_labels'] = test_df['similar_cases_labels'].tolist()
+    
+    
+    outputs_dict['text_climate'] = climate_df['text'].tolist()
+    outputs_dict['augmented_cases_climate'] = climate_df['augmented_cases'].tolist()
+    outputs_dict['similar_cases_climate'] = climate_df['similar_cases'].tolist()
+    outputs_dict['similar_cases_labels_climate'] = climate_df['similar_cases_labels'].tolist()
 
     file_name = os.path.join(
         config.predictions_dir,
@@ -414,7 +421,7 @@ def do_train_process(config=None):
         predictions_climate = trainer.predict(tokenized_dataset['climate'])
 
         save_results(config, label_encoder, predictions,
-                     predictions_climate, test_df)
+                     predictions_climate, test_df, climate_df)
 
 
 class AttributeDict(dict):
@@ -492,7 +499,7 @@ if __name__ == "__main__":
             "values": [args.num_cases]
         },
         'cbr_threshold': {
-            "values": [-1e7, 0.5]
+            "values": [-1e7]
             # "values": [0.5]
             # "values": [-10000000] if args.data_dir == "data/new_finegrained" else [-10000000] if args.data_dir == "data/finegrained" else [-10000000] if args.data_dir == "data/coarsegrained" else [0.5]
         },
@@ -534,4 +541,4 @@ if __name__ == "__main__":
     sweep_config['parameters'] = parameters_dict
     sweep_id = wandb.sweep(
         sweep_config, project="CBR framework with different entities considered for similarity retrieval")
-    wandb.agent(sweep_id, do_train_process, count=2)
+    wandb.agent(sweep_id, do_train_process, count=1)
