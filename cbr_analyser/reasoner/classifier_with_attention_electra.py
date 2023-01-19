@@ -258,19 +258,20 @@ def save_results(config, label_encoder, predictions, predictions_climate, test_d
 
     # run_name = wandb.run.name
     outputs_dict = {}
-    outputs_dict['note'] = 'electra_model_with_attention_check_cbr_different_features_for_retrieval'
+    outputs_dict['note'] = 'electra_model_with_attention_check_cbr_different_features_for_retrieval_without_training'
     outputs_dict['label_encoder'] = label_encoder
     outputs_dict["meta"] = dict(config)
     # outputs_dict['run_name'] = run_name
-    outputs_dict['predictions'] = predictions._asdict()
-    outputs_dict['predictions_climate'] = predictions_climate._asdict()
-    
+    outputs_dict['predictions'] = predictions._asdict(
+    ) if predictions else None
+    outputs_dict['predictions_climate'] = predictions_climate._asdict(
+    ) if predictions_climate else None
+
     outputs_dict['text'] = test_df['text'].tolist()
     outputs_dict['augmented_cases'] = test_df['augmented_cases'].tolist()
     outputs_dict['similar_cases'] = test_df['similar_cases'].tolist()
     outputs_dict['similar_cases_labels'] = test_df['similar_cases_labels'].tolist()
-    
-    
+
     outputs_dict['text_climate'] = climate_df['text'].tolist()
     outputs_dict['augmented_cases_climate'] = climate_df['augmented_cases'].tolist()
     outputs_dict['similar_cases_climate'] = climate_df['similar_cases'].tolist()
@@ -415,13 +416,13 @@ def do_train_process(config=None):
         )
 
         # print('Start the training ...')
-        trainer.train()
+        # trainer.train()
 
-        predictions = trainer.predict(tokenized_dataset['test'])
-        predictions_climate = trainer.predict(tokenized_dataset['climate'])
+        # predictions = trainer.predict(tokenized_dataset['test'])
+        # predictions_climate = trainer.predict(tokenized_dataset['climate'])
 
-        save_results(config, label_encoder, predictions,
-                     predictions_climate, test_df, climate_df)
+        save_results(config, label_encoder, None,
+                     None, test_df, climate_df)
 
 
 class AttributeDict(dict):
