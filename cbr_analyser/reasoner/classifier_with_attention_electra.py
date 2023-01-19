@@ -421,7 +421,7 @@ def do_train_process(config=None):
         predictions = trainer.predict(tokenized_dataset['test'])
         predictions_climate = trainer.predict(tokenized_dataset['climate'])
 
-        save_results(config, label_encoder, predictions, predictions_climate
+        save_results(config, label_encoder, predictions, predictions_climate,
                      None, test_df, climate_df)
 
 
