@@ -31,7 +31,7 @@ kgtk_conceptnet.tsv
 processed/
 cache/*
 tmp/
-# **/*.ipynb
+**/*.ipynb
 
 
 

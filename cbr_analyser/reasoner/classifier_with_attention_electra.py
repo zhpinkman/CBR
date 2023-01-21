@@ -258,7 +258,7 @@ def save_results(config, label_encoder, predictions, predictions_climate, test_d
 
     # run_name = wandb.run.name
     outputs_dict = {}
-    outputs_dict['note'] = 'electra_model_with_attention_check_cbr_different_features_for_retrieval_without_training'
+    outputs_dict['note'] = 'electra_model_with_attention_check_cbr_different_features_for_retrieval'
     outputs_dict['label_encoder'] = label_encoder
     outputs_dict["meta"] = dict(config)
     # outputs_dict['run_name'] = run_name
@@ -421,8 +421,7 @@ def do_train_process(config=None):
         predictions = trainer.predict(tokenized_dataset['test'])
         predictions_climate = trainer.predict(tokenized_dataset['climate'])
 
-        save_results(config, label_encoder, predictions, predictions_climate,
-                     None, test_df, climate_df)
+        save_results(config, label_encoder, predictions, predictions_climate, test_df, climate_df)
 
 
 class AttributeDict(dict):
