@@ -19,16 +19,16 @@ nvidia-smi
 # Activate (local) env
 # conda activate general
 
-dataset="data/finegrained_with_structures_explanations"
+dataset="data/finegrained_augmented"
 dataset_mod=${dataset//"/"/_}
 
-for split in "train" "dev" "test" "climate_test"
+for split in "train" "dev" "test"
 do
 
-for feature in "text" "explanations" "structure" "goals" "counter"
+for feature in "text"
 do
 
-for ratio_of_source_used in 0.1 0.4 0.7 1.0
+for ratio_of_source_used in 1.0
 do
 
 echo "Calculating similarities for ${feature} in ${split} split"

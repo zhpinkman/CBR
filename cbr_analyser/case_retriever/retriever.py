@@ -23,12 +23,16 @@ class Retriever:
 
 class SimCSE_Retriever(Retriever):
     def __init__(self, config) -> None:
+        print(config)
         self.similarities_dict = dict()
         base_path = os.path.join("cache", config.data_dir.replace("/", "_"))
+        print(base_path)
         simcse_model_paths = [file for file in os.listdir(
             base_path) if file.startswith(f"simcse_similarities_{config.feature}")]
+        print(simcse_model_paths)
         simcse_model_paths = [file for file in simcse_model_paths if file.endswith(
             f"ratio_{config.ratio_of_source_used}.joblib")]
+        print(simcse_model_paths)
         for path in simcse_model_paths:
             self.similarities_dict.update(
                 joblib.load(os.path.join(base_path, path))

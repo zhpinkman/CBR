@@ -499,7 +499,7 @@ if __name__ == "__main__":
             "values": [args.num_cases]
         },
         'cbr_threshold': {
-            "values": [-1e7]
+            "values": [-1e7, 0.5]
             # "values": [0.5]
             # "values": [-10000000] if args.data_dir == "data/new_finegrained" else [-10000000] if args.data_dir == "data/finegrained" else [-10000000] if args.data_dir == "data/coarsegrained" else [0.5]
         },
@@ -541,4 +541,4 @@ if __name__ == "__main__":
     sweep_config['parameters'] = parameters_dict
     sweep_id = wandb.sweep(
         sweep_config, project="CBR framework with different entities considered for similarity retrieval")
-    wandb.agent(sweep_id, do_train_process, count=1)
+    wandb.agent(sweep_id, do_train_process, count=6)
