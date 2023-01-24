@@ -20,7 +20,7 @@
 **/*.png
 **/*.pdf
 experiments/
-
+logs.txt
 wandb/
 logs/
 cbr_analyser/case_retriever/ExplaGraphs/*/
