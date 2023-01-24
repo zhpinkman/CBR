@@ -19,7 +19,7 @@
 **/*.txz
 **/*.png
 **/*.pdf
-
+experiments/
 
 wandb/
 logs/
