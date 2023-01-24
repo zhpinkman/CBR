@@ -515,4 +515,4 @@ if __name__ == "__main__":
     sweep_config['parameters'] = parameters_dict
     sweep_id = wandb.sweep(
         sweep_config, project="CBR framework with different entities considered for similarity retrieval")
-    wandb.agent(sweep_id, do_train_process, count=2)
+    wandb.agent(sweep_id, do_train_process, count=6)
