@@ -374,7 +374,6 @@ def do_train_process(config=None):
             logging_steps=200,
             evaluation_strategy="steps",
             report_to="wandb",
-            # auto_find_batch_size=True,
         )
 
         def compute_metrics(pred):
