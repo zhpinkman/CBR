@@ -295,7 +295,18 @@ def save_results(config, label_encoder, predictions, predictions_climate, test_d
 def do_train_process(config=None):
     with wandb.init(config=config):
         config = wandb.config
-        tokenizer = RobertaTokenizer.from_pretrained(checkpoint_for_adapter)
+
+        if config.eval_only:
+            tokenizer = RobertaTokenizer.from_pretrained(config.model_dir)
+            model = RobertaForSequenceClassification.from_pretrained(config.model_dir)
+        else:
+            tokenizer = RobertaTokenizer.from_pretrained(checkpoint_for_adapter)
+            model = RobertaForSequenceClassification.from_pretrained(
+                checkpoint_for_adapter,
+                num_labels=len(list(label_encoder.classes_)),
+                classifier_dropout=config.classifier_dropout,
+                ignore_mismatched_sizes=True,
+            )
 
         train_df = pd.read_csv(os.path.join(config.data_dir, "train.csv"))
         dev_df = pd.read_csv(os.path.join(config.data_dir, "dev.csv"))
@@ -375,26 +386,25 @@ def do_train_process(config=None):
             process, batched=True, remove_columns=dataset["train"].column_names
         )
 
-        model = RobertaForSequenceClassification.from_pretrained(
-            checkpoint_for_adapter,
-            num_labels=len(list(label_encoder.classes_)),
-            classifier_dropout=config.classifier_dropout,
-            ignore_mismatched_sizes=True,
-        )
-
         # print('Model loaded!')
 
         training_args = TrainingArguments(
             do_eval=True,
             do_train=True,
-            output_dir=f"./cbr_roberta_logical_fallacy_classification_{config.data_dir.replace('/', '_')}",
+            output_dir=f"models/cbr_roberta_logical_fallacy_classification_{config.data_dir.replace('/', '_')}",
+            save_total_limit=2,
+            load_best_model_at_end=True,
             learning_rate=config.learning_rate,
             per_device_train_batch_size=config.batch_size,
             per_device_eval_batch_size=config.batch_size,
             num_train_epochs=config.num_epochs,
             weight_decay=config.weight_decay,
-            logging_steps=200,
+            save_strategy="steps",
+            logging_strategy="steps",
             evaluation_strategy="steps",
+            logging_steps=200,
+            eval_steps=200,
+            save_steps=200,
             report_to="wandb",
         )
 
@@ -417,8 +427,12 @@ def do_train_process(config=None):
             # callbacks=[PrinterCallback]
         )
 
-        # print('Start the training ...')
-        trainer.train()
+        if not config.eval_only:
+            print("Start the training ...")
+            trainer.train()
+            trainer.save_model(
+                f"models/cbr_roberta_logical_fallacy_classification_{config.data_dir.replace('/', '_')}"
+            )
 
         predictions = trainer.predict(tokenized_dataset["test"])
         predictions_climate = trainer.predict(tokenized_dataset["climate"])
@@ -434,6 +448,12 @@ class AttributeDict(dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--eval_only", help="Whether to only evaluate the model", action="store_true"
+    )
+
+    parser.add_argument("--model_dir", help="Model directory", type=str)
 
     parser.add_argument(
         "--data_dir",
@@ -483,59 +503,22 @@ if __name__ == "__main__":
     sweep_config["metric"] = metric
 
     parameters_dict = {
+        "eval_only": {"values": [args.eval_only]},
+        "model_dir": {"values": [args.model_dir]},
         "ratio_of_source_used": {"values": [args.ratio_of_source_used]},
         "checkpoint_for_adapter": {"values": [checkpoint_for_adapter]},
         "sep_token": {"values": ["[SEP]"]},
-        "retrievers": {
-            "values": [
-                [args.retrievers_similarity_func]
-                # ['sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'],
-                # ['sentence-transformers/paraphrase-MiniLM-L6-v2'],
-                # ['sentence-transformers/all-MiniLM-L12-v2'],
-                # ['sentence-transformers/all-MiniLM-L6-v2'],
-                # ['simcse'],
-                # ['empathy'],
-                # ["simcse", "empathy"],
-                # ["simcse"],
-                # ["empathy"]
-            ]
-        },
+        "retrievers": {"values": [[args.retrievers_similarity_func]]},
         "feature": {"values": [args.feature]},
-        "num_cases": {
-            # "values": [4] if args.data_dir == "data/new_finegrained" else [1] if args.data_dir == "data/finegrained" else [1] if args.data_dir == "data/coarsegrained" else [3]
-            # "values": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-            "values": [args.num_cases]
-        },
-        "cbr_threshold": {
-            "values": [-1e7, 0.5]
-            # "values": [0.5]
-            # "values": [-10000000] if args.data_dir == "data/new_finegrained" else [-10000000] if args.data_dir == "data/finegrained" else [-10000000] if args.data_dir == "data/coarsegrained" else [0.5]
-        },
+        "num_cases": {"values": [args.num_cases]},
+        "cbr_threshold": {"values": [-1e7, 0.5]},
         "data_dir": {"values": [args.data_dir]},
         "predictions_dir": {"values": [args.predictions_dir]},
         "batch_size": {"values": [16]},
-        "learning_rate": {
-            "values": [8.447927580802138e-05]
-            # 'distribution': 'uniform',
-            # 'min': 1e-5,
-            # 'max': 1e-4
-            # 'min': 3e-5 if args.data_dir == "data/finegrained" else 1e-5,
-            # 'max': 6e-5 if args.data_dir == "data/finegrained" else 1e-4,
-            # "values": [3.120210415844665e-05] if args.data_dir == "data/new_finegrained" else [7.484147412800621e-05] if args.data_dir == "data/finegrained" else [7.484147412800621e-05] if args.data_dir == "data/coarsegrained" else [5.393991227358502e-06]
-        },
+        "learning_rate": {"values": [8.447927580802138e-05]},
         "num_epochs": {"values": [10]},
-        "classifier_dropout": {
-            # "values": [0.1, 0.3, 0.8]
-            "values": [0.1]
-            # "values": [0.8] if args.data_dir == "data/new_finegrained" else [0.3] if args.data_dir == "data/finegrained" else [0.3] if args.data_dir == "data/coarsegrained" else [0.1]
-        },
-        "weight_decay": {
-            "values": [0.04962960561110768]
-            # 'distribution': 'uniform',
-            # 'min': 1e-4,
-            # 'max': 1e-1
-            # "values": [0.07600643653465429] if args.data_dir == "data/new_finegrained" else [0.00984762513370293] if args.data_dir == "data/finegrained" else [0.00984762513370293] if args.data_dir == "data/coarsegrained" else [0.022507698737927326]
-        },
+        "classifier_dropout": {"values": [0.1]},
+        "weight_decay": {"values": [0.04962960561110768]},
     }
 
     sweep_config["parameters"] = parameters_dict

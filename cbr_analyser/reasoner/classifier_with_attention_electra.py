@@ -306,7 +306,18 @@ def save_results(
 def do_train_process(config=None):
     with wandb.init(config=config):
         config = wandb.config
-        tokenizer = ElectraTokenizer.from_pretrained(checkpoint_for_adapter)
+
+        if config.eval_only:
+            tokenizer = ElectraTokenizer.from_pretrained(config.model_dir)
+            model = ElectraForSequenceClassification.from_pretrained(config.model_dir)
+        else:
+            tokenizer = ElectraTokenizer.from_pretrained(checkpoint_for_adapter)
+            model = ElectraForSequenceClassification.from_pretrained(
+                checkpoint_for_adapter,
+                num_labels=len(list(label_encoder.classes_)),
+                classifier_dropout=config.classifier_dropout,
+                ignore_mismatched_sizes=True,
+            )
 
         train_df = pd.read_csv(os.path.join(config.data_dir, "train.csv"))
         dev_df = pd.read_csv(os.path.join(config.data_dir, "dev.csv"))
@@ -386,26 +397,25 @@ def do_train_process(config=None):
             process, batched=True, remove_columns=dataset["train"].column_names
         )
 
-        model = ElectraForSequenceClassification.from_pretrained(
-            checkpoint_for_adapter,
-            num_labels=len(list(label_encoder.classes_)),
-            classifier_dropout=config.classifier_dropout,
-            ignore_mismatched_sizes=True,
-        )
-
         print("Model loaded!")
 
         training_args = TrainingArguments(
             do_eval=True,
             do_train=True,
-            output_dir=f"./cbr_electra_logical_fallacy_classification_{config.data_dir.replace('/', '_')}",
+            output_dir=f"models/cbr_electra_logical_fallacy_classification_{config.data_dir.replace('/', '_')}",
+            save_total_limit=2,
+            load_best_model_at_end=True,
             learning_rate=config.learning_rate,
             per_device_train_batch_size=config.batch_size,
             per_device_eval_batch_size=config.batch_size,
             num_train_epochs=config.num_epochs,
             weight_decay=config.weight_decay,
-            logging_steps=200,
+            save_strategy="steps",
+            logging_strategy="steps",
             evaluation_strategy="steps",
+            logging_steps=200,
+            eval_steps=200,
+            save_steps=200,
             report_to="wandb",
         )
 
@@ -427,8 +437,13 @@ def do_train_process(config=None):
             compute_metrics=compute_metrics,
         )
 
-        # print('Start the training ...')
-        trainer.train()
+        if not config.eval_only:
+            print("Start the training ...")
+            trainer.train()
+
+            trainer.save_model(
+                f"models/cbr_electra_logical_fallacy_classification_{config.data_dir.replace('/', '_')}"
+            )
 
         predictions = trainer.predict(tokenized_dataset["test"])
         predictions_climate = trainer.predict(tokenized_dataset["climate"])
@@ -446,6 +461,12 @@ class AttributeDict(dict):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "--eval_only", help="Whether to only evaluate the model", action="store_true"
+    )
+
+    parser.add_argument("--model_dir", help="Model directory", type=str)
 
     parser.add_argument(
         "--data_dir",
@@ -495,6 +516,8 @@ if __name__ == "__main__":
     sweep_config["metric"] = metric
 
     parameters_dict = {
+        "eval_only": {"values": [args.eval_only]},
+        "model_dir": {"values": [args.model_dir]},
         "ratio_of_source_used": {"values": [args.ratio_of_source_used]},
         "checkpoint_for_adapter": {"values": [checkpoint_for_adapter]},
         "sep_token": {"values": ["[SEP]"]},
