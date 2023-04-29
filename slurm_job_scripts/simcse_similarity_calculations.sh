@@ -19,29 +19,25 @@ nvidia-smi
 # Activate (local) env
 # conda activate general
 
-dataset="data/finegrained_augmented"
+dataset="data/finegrained_with_structures_explanations"
 dataset_mod=${dataset//"/"/_}
 
-for split in "train" "dev" "test"
-do
+# for split in "train" "dev" "test" "climate_test"; do
 
-for feature in "text"
-do
+for feature in "text" "explanations" "structure" "counter" "goals"; do
+    echo "Feature: $feature"
 
-for ratio_of_source_used in 1.0
-do
+    for ratio_of_source_used in 0.1; do
 
-echo "Calculating similarities for ${feature} in ${split} split"
+        CUDA_VISIBLE_DEVICES=2,3,4,5,6,7 python -m cbr_analyser.case_retriever.transformers.simcse_similarity_calculations \
+            --feature ${feature} \
+            --source_file "${dataset}/train.csv" \
+            --target_file "${dataset}/split.csv" \
+            --output_file "cache/${dataset_mod}/simcse_similarities_${feature}_split_ratio_${ratio_of_source_used}.joblib" \
+            --ratio_of_source_used ${ratio_of_source_used}
 
-CUDA_VISIBLE_DEVICES=7 python -m cbr_analyser.case_retriever.transformers.simcse_similarity_calculations \
-    --feature ${feature} \
-    --source_file "${dataset}/train.csv" \
-    --target_file "${dataset}/${split}.csv" \
-    --output_file "cache/${dataset_mod}/simcse_similarities_${feature}_${split}_ratio_${ratio_of_source_used}.joblib" \
-    --ratio_of_source_used ${ratio_of_source_used}
-
+    done
 done
-done
-done
+# done
 
 # conda deactivate
