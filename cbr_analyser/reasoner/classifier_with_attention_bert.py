@@ -292,17 +292,6 @@ def do_train_process(config=None):
     with wandb.init(config=config):
         config = wandb.config
 
-        if config.eval_only:
-            tokenizer = BertTokenizer.from_pretrained(config.model_dir)
-            model = BertForSequenceClassification.from_pretrained(config.model_dir)
-        else:
-            tokenizer = BertTokenizer.from_pretrained(checkpoint_for_adapter)
-            model = BertForSequenceClassification.from_pretrained(
-                checkpoint_for_adapter,
-                num_labels=len(list(label_encoder.classes_)),
-                ignore_mismatched_sizes=True,
-            )
-
         train_df = pd.read_csv(os.path.join(config.data_dir, "train.csv"))
         dev_df = pd.read_csv(os.path.join(config.data_dir, "dev.csv"))
         test_df = pd.read_csv(os.path.join(config.data_dir, "test.csv"))
@@ -362,6 +351,17 @@ def do_train_process(config=None):
                     "test": Dataset.from_pandas(test_df),
                     "climate": Dataset.from_pandas(climate_df),
                 }
+            )
+
+        if config.eval_only:
+            tokenizer = BertTokenizer.from_pretrained(config.model_dir)
+            model = BertForSequenceClassification.from_pretrained(config.model_dir)
+        else:
+            tokenizer = BertTokenizer.from_pretrained(checkpoint_for_adapter)
+            model = BertForSequenceClassification.from_pretrained(
+                checkpoint_for_adapter,
+                num_labels=len(list(label_encoder.classes_)),
+                ignore_mismatched_sizes=True,
             )
 
         def process(batch):
@@ -428,7 +428,7 @@ def do_train_process(config=None):
             print("Start the training ...")
             trainer.train()
             trainer.save_model(
-                f"models/cbr_bert_logical_fallacy_classification_{config.data_dir.replace('/', '_')}"
+                f"models/cbr_bert_logical_fallacy_classification_{config.data_dir.replace('/', '_')}_feature_{config.feature}"
             )
 
         predictions = trainer.predict(tokenized_dataset["test"])
@@ -511,7 +511,7 @@ if __name__ == "__main__":
         "predictions_dir": {"values": [args.predictions_dir]},
         "batch_size": {"values": [16]},
         "learning_rate": {"values": [3e-5]},
-        "num_epochs": {"values": [10]},
+        "num_epochs": {"values": [6]},
         "classifier_dropout": {"values": [0.1]},
         "weight_decay": {"values": [0.04962960561110768]},
     }
@@ -521,4 +521,4 @@ if __name__ == "__main__":
         sweep_config,
         project="CBR framework with different entities considered for similarity retrieval",
     )
-    wandb.agent(sweep_id, do_train_process, count=6)
+    wandb.agent(sweep_id, do_train_process, count=1)

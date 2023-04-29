@@ -9,7 +9,7 @@ for i in 1 2; do
 
             for ratio_of_source_used in 0.1; do
 
-                WANDB_MODE="dryrun" CUDA_VISIBLE_DEVICES=5,6,7 python -m cbr_analyser.reasoner.classifier_without_attention_electra \
+                WANDB_MODE="dryrun" CUDA_VISIBLE_DEVICES=3,4,5,6,7 python -m cbr_analyser.reasoner.classifier_without_attention_electra \
                     --data_dir ${dataset} \
                     --feature ${feature} \
                     --num_cases ${num_cases} \

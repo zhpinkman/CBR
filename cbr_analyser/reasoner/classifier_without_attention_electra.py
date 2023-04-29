@@ -277,18 +277,6 @@ def do_train_process(config=None):
     with wandb.init(config=config):
         config = wandb.config
 
-        if config.eval_only:
-            tokenizer = ElectraTokenizer.from_pretrained(config.model_dir)
-            model = ElectraForSequenceClassification.from_pretrained(config.model_dir)
-        else:
-            tokenizer = ElectraTokenizer.from_pretrained(checkpoint_for_adapter)
-            model = ElectraForSequenceClassification.from_pretrained(
-                checkpoint_for_adapter,
-                num_labels=len(list(label_encoder.classes_)),
-                classifier_dropout=config.classifier_dropout,
-                ignore_mismatched_sizes=True,
-            )
-
         train_df = pd.read_csv(os.path.join(config.data_dir, "train.csv"))
         dev_df = pd.read_csv(os.path.join(config.data_dir, "dev.csv"))
         test_df = pd.read_csv(os.path.join(config.data_dir, "test.csv"))
@@ -350,6 +338,18 @@ def do_train_process(config=None):
                 }
             )
 
+        if config.eval_only:
+            tokenizer = ElectraTokenizer.from_pretrained(config.model_dir)
+            model = ElectraForSequenceClassification.from_pretrained(config.model_dir)
+        else:
+            tokenizer = ElectraTokenizer.from_pretrained(checkpoint_for_adapter)
+            model = ElectraForSequenceClassification.from_pretrained(
+                checkpoint_for_adapter,
+                num_labels=len(list(label_encoder.classes_)),
+                classifier_dropout=config.classifier_dropout,
+                ignore_mismatched_sizes=True,
+            )
+
         def process(batch):
             inputs_cbr = tokenizer(
                 batch["augmented_cases"], truncation=True, padding="max_length"
@@ -409,7 +409,7 @@ def do_train_process(config=None):
             print("Start the training ...")
             trainer.train()
             trainer.save_model(
-                f"models/cbr_electra_wo_attention_logical_fallacy_classification_{config.data_dir.replace('/', '_')}"
+                f"models/cbr_electra_wo_attention_logical_fallacy_classification_{config.data_dir.replace('/', '_')}_feature_{config.feature}"
             )
 
         predictions = trainer.predict(tokenized_dataset["test"])

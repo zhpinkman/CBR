@@ -54,19 +54,7 @@ def save_results(
 def do_train_process(config=None):
     with wandb.init(config=config):
         config = wandb.config
-        if config.eval_only:
-            tokenizer = RobertaTokenizer.from_pretrained(config.model_dir)
-            model = RobertaForSequenceClassification.from_pretrained(config.model_dir)
-        else:
-            tokenizer = RobertaTokenizer.from_pretrained(
-                "cross-encoder/nli-roberta-base"
-            )
-            model = RobertaForSequenceClassification.from_pretrained(
-                "cross-encoder/nli-roberta-base",
-                num_labels=len(list(label_encoder.classes_)),
-                classifier_dropout=config.classifier_dropout,
-                ignore_mismatched_sizes=True,
-            )
+
         train_df = pd.read_csv(os.path.join(config.data_dir, "train.csv"))
         dev_df = pd.read_csv(os.path.join(config.data_dir, "dev.csv"))
         test_df = pd.read_csv(os.path.join(config.data_dir, "test.csv"))
@@ -93,6 +81,20 @@ def do_train_process(config=None):
                 "climate_test": Dataset.from_pandas(climate_df),
             }
         )
+
+        if config.eval_only:
+            tokenizer = RobertaTokenizer.from_pretrained(config.model_dir)
+            model = RobertaForSequenceClassification.from_pretrained(config.model_dir)
+        else:
+            tokenizer = RobertaTokenizer.from_pretrained(
+                "cross-encoder/nli-roberta-base"
+            )
+            model = RobertaForSequenceClassification.from_pretrained(
+                "cross-encoder/nli-roberta-base",
+                num_labels=len(list(label_encoder.classes_)),
+                classifier_dropout=config.classifier_dropout,
+                ignore_mismatched_sizes=True,
+            )
 
         def process(batch):
             inputs = tokenizer(batch["text"], truncation=True, padding="max_length")
@@ -203,7 +205,7 @@ if __name__ == "__main__":
         "predictions_dir": {"values": [args.predictions_dir]},
         "batch_size": {"values": [16]},
         "learning_rate": {"values": [8.447927580802138e-05]},
-        "num_epochs": {"values": [8]},
+        "num_epochs": {"values": [6]},
         "classifier_dropout": {"values": [0.1]},
         "weight_decay": {"values": [0.04962960561110768]},
     }
@@ -212,4 +214,4 @@ if __name__ == "__main__":
     sweep_id = wandb.sweep(
         sweep_config, project="Baseline Finder with CBR and different retrievers"
     )
-    wandb.agent(sweep_id, do_train_process, count=18)
+    wandb.agent(sweep_id, do_train_process, count=1)
