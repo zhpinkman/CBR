@@ -1,4 +1,4 @@
-This repository contains the code for the paper [Case-Based Reasoning with Language Models for Classification of Logical Fallacies](https://arxiv.org/abs/2301.11879) that was accepted to the IJCAI 2023 conference. The model uses case based reasoning to reinforce language models to identify and categorize logical fallacies more accurately and more explainable. 
+This repository contains the code for the paper [Case-Based Reasoning with Language Models for Classification of Logical Fallacies](https://arxiv.org/abs/2301.11879) that was accepted to the IJCAI 2023 conference. The model uses case based reasoning to reinforce language models to identify and categorize logical fallacies more accurately and more explainable. Please do not hesitate to contact us if you have any questions or comments. (zhivarsourati@gmail.com)
 
 ### Installation
 
@@ -26,7 +26,7 @@ In the following, each major directory and the code that is contained in it is e
 
 
 ### Cache
-Since the most time consuming part of the experiments is computing the look up tables for the retrievers to find similar examples to a new example, its look up tables are saved in `cache` directory. Using different settings, the look up tables and other cached files corresponding to each setting is stored in each associated `joblib` file. Due to the large size of cached files, you can access the zipped file of the cache [here](). After downloading the file, you can unzip it under the cache directory.
+Since the most time consuming part of the experiments is computing the look up tables for the retrievers to find similar examples to a new example, its look up tables are saved in `cache` directory. Using different settings, the look up tables and other cached files corresponding to each setting is stored in each associated `joblib` file. Due to the large size of cached files, you can access the zipped file of the cache [here](https://drive.google.com/file/d/1HzYrd86thVz-Ih3TjrcmINDrhpCefGXt/view?usp=share_link). After downloading the file, you can unzip it under the cache directory.
 
 
 ### Dataset
