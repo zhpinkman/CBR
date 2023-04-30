@@ -11,9 +11,9 @@ for num_cases in 2; do
                 --data_dir ${dataset} \
                 --feature ${feature} \
                 --num_cases ${num_cases} \
-                --ratio_of_source_used ${ratio_of_source_used} \
-                --eval_only \
-                --model_dir "models/cbr_roberta_logical_fallacy_classification_data_final_data_feature_explanations"
+                --ratio_of_source_used ${ratio_of_source_used}
+            # --eval_only \
+            # --model_dir "models/cbr_roberta_logical_fallacy_classification_data_final_data_feature_explanations"
 
         done
 

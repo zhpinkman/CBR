@@ -3,7 +3,7 @@
 
 This folder contains all the scripts to run the training and evaluation of the models. The scripts are for both training of the models and also for extraction and pre computation of the similarity look up tables. 
 
-For the models, as we used `ELECTRA`, `RoBERTa`, `BERT`, and `DistilBERT`, we have a script for each of them. 
+For the models, as we used `ELECTRA`, `RoBERTa`, and `BERT`, we have a script for each of them. Note that, for training the models, you don't have to change anything in the scripts, however for using the pretrained models that will be saved in the `models` directory, you have to pass `eval_only` like `--eval_only` without any inputs to it as well as `model_dir` with `--model_dir directory_to_the_saved_model` to the script. The `model_dir` is the directory that the model will be saved in after training. 
 
 
 For the similarity look up tables, we have a script that based on the feature and ratio of the data to use, will compute the similarity look up tables for all the datasets.

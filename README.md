@@ -5,10 +5,7 @@ This repository contains the code for the paper [Case-Based Reasoning with Langu
 To install the dependencies, you can use the provided `environment.yml` file to create a conda environment with all the required dependencies. To do so, you can run the following command:
 
 ```bash
-
-conda env create -f environment.yml
-
-
+conda env create --name cbr -f environment.yml
 ```
 
 
@@ -29,7 +26,7 @@ In the following, each major directory and the code that is contained in it is e
 
 
 ### Cache
-As each stage of the model takes a bit of time to run, at the end of each stage, the outputs of that specific part would be stored in `cache` directory. The most time consuming part of the experiments is computing the look up tables for the retrievers to find similar examples to a new example which its look up tables are saved also in `cache` directory. Using different settings, the look up tables and other cached files corresponding to each setting is stored in each associated `joblib` file. Due to the large size of cached files, we did not include them in the repository, however, they're accessible upon request. This folder should be downloaded and unzipped in cache directory to replace the empty folder of `data_final_data` that is already included in the repository.
+Since the most time consuming part of the experiments is computing the look up tables for the retrievers to find similar examples to a new example, its look up tables are saved in `cache` directory. Using different settings, the look up tables and other cached files corresponding to each setting is stored in each associated `joblib` file. Due to the large size of cached files, you can access the zipped file of the cache [here](). After downloading the file, you can unzip it under the cache directory.
 
 
 ### Dataset
@@ -41,14 +38,14 @@ All the logic contained in the project is contained in the `cbr_analyser`.
 
 ### Retriever
 
-All the codes and resources that are used to compute the embeddings as well as similarity look up tables for the retriever component are in `cbr_analyser/case_retriever`. Also within different retriever families, the ones that we are using for the results in the paper are ones in the `transformers` subdirectory. We did some experiments with the other models like GCN, ExplaGraph, and AMR as well which were not included in our reported results but the code still exists in our codebase. 
+All the codes and resources that are used to compute the embeddings as well as similarity look up tables for the retriever component are in `cbr_analyser/case_retriever`. The retriever component is the first stage of the Case-based reasoning pipeline. The retriever component is responsible for finding the most similar cases to a new example. The retriever component uses the `transformers` and `SimCSE` library to compute the embeddings of the examples.
 
-After running the similarity calculations in `transformers` directory, their similarity look up tables are stored in `cache` directory, and further will be used when the reasoner models are trained.
+After running the similarity calculations in `transformers` directory, their similarity look up tables are stored in `cache` directory, and further will be used when the reasoner models are trained. Note that these similarities can be computed per case representations and also using different ratios of the case data base. These parameters can be changed in the `job_scripts/simcse_similarity_calculations.sh` script.
 
 
 ### Adapter
 
-Except for the first stage of the Case-based reasoning pipeline that is handled by the retriever and discussed separately in the pervious section, the other three sections, namely, the adapter and classifier and their code are in `cbr_analyser/reasoner` directory. Be sure that the similarity look up tables are computed and stored in `cache` directory before running the adapter and classifier. The easiest way to run these models is to use the job scripts discussed in the next section. Different features and different hyperparameters that can be set for running the models are all included in the scripts as arguments and set with sample values.
+Except for the first stage of the Case-based reasoning pipeline that is handled by the retriever and discussed separately in the pervious section, the other sections, namely, the adapter and classifier and their code are in `cbr_analyser/reasoner` directory. Be sure that the similarity look up tables are computed and stored in `cache` directory before running the adapter and classifier (the script for computing the similarities is located in the `job_scripts/simcse_similarity_calculations.sh`). The easiest way to run these models is to use the job scripts discussed in the next section. Different features and different hyperparameters that can be set for running the models are all included in the scripts as arguments and set with sample values.
 
 ### Job Scripts
 
