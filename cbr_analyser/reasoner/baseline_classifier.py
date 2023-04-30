@@ -176,7 +176,10 @@ if __name__ == "__main__":
     parser.add_argument("--model_dir", help="Model directory", type=str)
 
     parser.add_argument(
-        "--data_dir", help="Train input file path", type=str, default="data/finegrained"
+        "--data_dir",
+        help="Train input file path",
+        type=str,
+        default="data/data_without_augmentation",
     )
     parser.add_argument(
         "--predictions_dir",

@@ -4,9 +4,7 @@ from datetime import datetime
 import wandb
 from cbr_analyser.case_retriever.retriever import (
     Retriever,
-    SentenceTransformerRetriever,
     SimCSE_Retriever,
-    Empathy_Retriever,
 )
 import argparse
 import joblib
@@ -294,12 +292,9 @@ def do_train_process(config=None):
             if retriever_str == "simcse":
                 simcse_retriever = SimCSE_Retriever(config)
                 retrievers_to_use.append(simcse_retriever)
-            elif retriever_str == "empathy":
-                empathy_retriever = Empathy_Retriever(config)
-                retrievers_to_use.append(empathy_retriever)
-            elif retriever_str.startswith("sentence-transformers"):
-                sentence_transformers_retriever = SentenceTransformerRetriever(config)
-                retrievers_to_use.append(sentence_transformers_retriever)
+            else:
+                print("retriever not found")
+                exit()
 
         dfs_to_process = [train_df, dev_df, test_df, climate_df]
         for df in dfs_to_process:
@@ -307,8 +302,6 @@ def do_train_process(config=None):
         try:
             del retrievers_to_use
             del simcse_retriever
-            del empathy_retriever
-            del coarse_retriever
         except:
             pass
 
@@ -439,7 +432,7 @@ if __name__ == "__main__":
         "--data_dir",
         help="Train input file path",
         type=str,
-        default="data/new_finegrained",
+        default="data/final_data",
     )
     parser.add_argument(
         "--predictions_dir",
